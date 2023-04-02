@@ -31,8 +31,26 @@ export default makeScene2D(function* (view) {
 		// lineCap="round"
 	/>);
 
-	const randomVectorRefs = [];
-	yield* all(createRandomVectorRefs(view, randomVectorRefs));
+	// const randomVectorRefs = [];
+	const randomVectorRefs = createRef<Node>();
+	view.add(
+		<Node ref={randomVectorRefs} x={0} y={0}></Node>
+	)
+	createRandomVectorRefs(randomVectorRefs);
+	// logger.debug(`randomVectorRefs() is ${randomVectorRefs()}`);
+	// for (const x in randomVectorRefs().children()) {
+	// 	logger.debug(x);
+	// }
+
+	const sunRayRef = createRef<Line>();
+	view.add(<Line ref={sunRayRef}
+		points={[new Vector2(540, -115), new Vector2(0, 200)]}
+		stroke={YELLOW}
+		lineWidth={10}
+		lineCap={'round'}
+		opacity={0}
+		end={0}
+	/>);
 
 	const normalRef = createRef<Line>();
 	const surfaceRef = createRef<Line>();
@@ -58,14 +76,14 @@ export default makeScene2D(function* (view) {
 
 	const sunRef = createRef<Node>();
 	view.add(
-		<Node ref={sunRef} x={600} y={-150}>
+		<Node ref={sunRef} x={600} y={-150} opacity={0}>
 			<Circle
 				fill={YELLOW}
 				size={100}
 			></Circle>
 		</Node>
 	)
-	addSunRayRefs(view, sunRef);
+	addSunshineRefs(sunRef);
 
 	const rectRef = createRef<Rect>();
 	view.add(<Rect ref={rectRef}
@@ -90,6 +108,16 @@ export default makeScene2D(function* (view) {
 	yield* waitFor(0.6);
 	yield* surfaceGroup().rotation(30, 1.5).to(0, 1.5);
 	yield* waitFor(0.6);
+	yield* sunRef().opacity(1, 1.5);
+	yield* sunRayRef().opacity(1),
+	yield* waitFor(0.6);
+	yield* all(
+		sunRayRef().end(1, 1.5),
+		delay(0.9, normalRef().stroke(YELLOW, 1.5)),
+		delay(0.9, sunRayRef().start(1, 1.5)),
+		delay(2.0, sunRayRef().opacity(0, 0.6)),
+	);
+	yield* waitFor(0.6);
 	yield* all(
 		rectRef().position.y(-540, 2),
 		codeRef().position.y(-440, 2)
@@ -97,8 +125,8 @@ export default makeScene2D(function* (view) {
 	yield* waitFor(0.6);
 	yield* codeRef().edit(1.2)`ray.dir = plane.normal${insert(' + random()')};`;
 	yield* waitFor(0.6);
-	for (const randomVectorRef of randomVectorRefs) {
-		yield randomVectorRef().end(1, 1.5);
+	for (const randomVectorRef of randomVectorRefs().children()) {
+		yield randomVectorRef.end(1, 1.5);
 	}
 	yield* waitFor(2);
 	yield* codeRef().selection(lines(0, Infinity), 1);
@@ -107,16 +135,20 @@ export default makeScene2D(function* (view) {
 	yield* waitFor(0.6);
 	yield* codeRef().selection(lines(0, Infinity), 1);
 	yield* waitFor(0.6);
+	for (const randomVectorRef of randomVectorRefs().children()) {
+		yield randomVectorRef.end(0, 0.6);
+	}
 	yield* all(
 		rectRef().position.y(-840, 0.6),
 		codeRef().position.y(-740, 0.6),
-		delay(0.1, normalRef().opacity(0, 0.6)),
-		delay(0.5, surfaceRef().opacity(0, 0.6)),
-		delay(0.9, gridRef().opacity(0, 0.6))
+		delay(0.1, sunRef().opacity(0, 0.6)),
+		delay(0.4, normalRef().end(0, 0.6)),
+		delay(0.7, surfaceRef().opacity(0, 0.6)),
+		delay(1.2, gridRef().opacity(0, 0.6))
 	);
 });
 
-function* createRandomVectorRefs(view, randomVectorRefs) {
+function createRandomVectorRefs(randomVectorRefs) {
 	const randomVectorCount = 10;
 	const randomVectorAngleIncrement = 2 * Math.PI / randomVectorCount;
 	let angle = 0;
@@ -124,11 +156,9 @@ function* createRandomVectorRefs(view, randomVectorRefs) {
 	for (let i = 0; i < randomVectorCount; i++) {
 		const randomVectorRef = createRef<Line>();
 
-		randomVectorRefs.push(randomVectorRef);
-
 		angle += randomVectorAngleIncrement;
 
-		yield view.add(<Line ref={randomVectorRef}
+		randomVectorRefs().add(<Line ref={randomVectorRef}
 			points={[
 				new Vector2(0, 0),
 				new Vector2(Math.cos(angle) * 200, Math.sin(angle) * -200)
@@ -142,19 +172,19 @@ function* createRandomVectorRefs(view, randomVectorRefs) {
 	}
 };
 
-function addSunRayRefs(view, sunRef) {
-	const sunRayCount = 10;
-	const sunRayAngleIncrement = 2 * Math.PI / sunRayCount;
-	let angle = 0;
-	const sunRayRefs = [];
-	for (let i = 0; i < sunRayCount; i++) {
-		const sunRayRef = createRef<Line>();
+function addSunshineRefs(sunRef) {
+	const sunshineCount = 10;
+	const sunshineAngleIncrement = 2 * Math.PI / sunshineCount;
+	let angle = 0.53;
+	const sunshineRefs = [];
+	for (let i = 0; i < sunshineCount; i++) {
+		const sunshineRef = createRef<Line>();
 
-		sunRayRefs.push(sunRayRef);
+		sunshineRefs.push(sunshineRef);
 
-		angle += sunRayAngleIncrement;
+		angle += sunshineAngleIncrement;
 
-		sunRef().add(<Line ref={sunRayRef}
+		sunRef().add(<Line ref={sunshineRef}
 			points={[
 				new Vector2(Math.cos(angle) * 70, Math.sin(angle) * -70),
 				new Vector2(Math.cos(angle) * 100, Math.sin(angle) * -100)
