@@ -2,10 +2,8 @@ import { makeScene2D } from '@motion-canvas/2d/lib/scenes';
 import { Grid, Rect, Line, Node, Circle } from '@motion-canvas/2d/lib/components';
 import { createRef, useLogger } from '@motion-canvas/core/lib/utils';
 import { all, delay, waitFor } from '@motion-canvas/core/lib/flow';
-import { CodeBlock, insert, lines } from '@motion-canvas/2d/lib/components/CodeBlock';
-import { tween } from '@motion-canvas/core/lib/tweening';
-// import { DEFAULT, createSignal } from '@motion-canvas/core/lib/signals';
-import { Vector2 } from '@motion-canvas/core/lib/types';
+import { CodeBlock, insert } from '@motion-canvas/2d/lib/components/CodeBlock';
+import { tween, map, easeInOutCubic } from '@motion-canvas/core/lib/tweening';
 
 const GRAY = '#2a2a2a';
 const LIGHT_GRAY = '#444444';
@@ -19,6 +17,7 @@ export default makeScene2D(function* (view) {
 	view.fill(GRAY);
 
 	let data = setup(view);
+	data.logger = logger;
 
 	data.codeRef = createRef<CodeBlock>();
 	yield view.add(<CodeBlock ref={data.codeRef}
@@ -29,7 +28,7 @@ export default makeScene2D(function* (view) {
 
 	yield* run(data)
 
-	yield* cleanup(data.randomVectorRefs, data.rectRef, data.codeRef, data.sunRef, data.normalRef, data.surfaceRef, data.gridRef);
+	yield* cleanup(data);
 });
 
 function setup(view) {
@@ -54,7 +53,7 @@ function setup(view) {
 
 	data.sunRayRef = createRef<Line>();
 	view.add(<Line ref={data.sunRayRef}
-		points={[new Vector2(540, -115), new Vector2(0, 200)]}
+		points={[[540, -115], [0, 200]]}
 		stroke={YELLOW}
 		lineWidth={10}
 		lineCap={'round'}
@@ -68,14 +67,14 @@ function setup(view) {
 	view.add(
 		<Node ref={data.surfaceGroup} y={200}>
 			<Line ref={data.normalRef}
-				points={[new Vector2(0, 0), new Vector2(0, -200)]}
+				points={[[0, 0], [0, -200]]}
 				stroke={RED}
 				lineWidth={10}
 				endArrow
 				end={0}
 			/>
 			<Line ref={data.surfaceRef}
-				points={[new Vector2(-400, 0), new Vector2(400, 0)]}
+				points={[[-400, 0], [400, 0]]}
 				stroke={WHITE}
 				lineWidth={20}
 				lineCap={'round'}
@@ -103,6 +102,10 @@ function setup(view) {
 		y={-840}
 	/>);
 
+	// TODO: REMOVE
+	data.line = createRef<Line>();
+	view.add(<Line ref={data.line} lineWidth={3} stroke="#ECEFF4" points={[[0, 0], [100, 200]]} />)
+
 	return data;
 }
 
@@ -118,8 +121,8 @@ function createRandomVectorRefs(randomVectorRefs) {
 
 		randomVectorRefs().add(<Line ref={randomVectorRef}
 			points={[
-				new Vector2(0, 0),
-				new Vector2(Math.cos(angle) * 200, Math.sin(angle) * -200)
+				[0, 0],
+				[Math.cos(angle) * 200, Math.sin(angle) * -200]
 			]}
 			stroke={YELLOW}
 			lineWidth={10}
@@ -145,8 +148,8 @@ function addSunshineRefs(sunRef) {
 
 		sunRef().add(<Line ref={sunshineRef}
 			points={[
-				new Vector2(Math.cos(angle) * 70, Math.sin(angle) * -70),
-				new Vector2(Math.cos(angle) * 100, Math.sin(angle) * -100)
+				[Math.cos(angle) * 70, Math.sin(angle) * -70],
+				[Math.cos(angle) * 100, Math.sin(angle) * -100]
 			]}
 			stroke={YELLOW}
 			lineWidth={10}
@@ -191,20 +194,58 @@ function* run(data) {
 	yield* data.codeRef().edit(1.2)`ray.dir = ${insert('normalize(')}plane.normal + random()${insert(')')};`;
 	// yield* waitFor(0.6);
 	// yield* codeRef().selection(lines(0, Infinity), 1);
+
+	// TODO: Lerp data.randomVectorRefs to be normalized
+	data.logger.debug("foo");
+
+	// TODO: REMOVE
+	// yield* data.line().points([[500, 200], [-200, -500]], 5, easeInOutCubic)
+
+	// data.logger.debug(`${data.randomVectorRefs().children()[0]}`);
+	yield* data.randomVectorRefs().children()[0].points([[0, 200], [100, 100]], 3);
+
+	// yield* data.randomVectorRefs().children()[0].points([[0, 200], [100, 100]], 3, easeInOutCubic);
+	// for (const randomVectorRef of data.randomVectorRefs().children()) {
+	// 	// yield randomVectorRef.points()[1].x += 10;
+	// 	// data.logger.debug(`${randomVectorRef.points()[1].x}`);
+
+	// 	// const oldStartX = randomVectorRef.points()[0].x;
+	// 	// const oldStartY = randomVectorRef.points()[0].y;
+	// 	const oldEndX = randomVectorRef.points()[1].x;
+	// 	const oldEndY = randomVectorRef.points()[1].y;
+
+	// 	// const oldStartX = 100;
+	// 	// const oldStartY = 100;
+	// 	// const oldEndX = 100;
+	// 	// const oldEndY = 100;
+
+	// 	// yield* tween(2, value => {
+	// 	// 	// randomVectorRef.points()[0].x = map(oldStartX, 0, value);
+	// 	// 	// randomVectorRef.points()[0].y = map(oldStartY, 0, value);
+	// 	// 	randomVectorRef.points()[1].x = map(oldEndX, 0, value);
+	// 	// 	randomVectorRef.points()[1].y = map(oldEndY, 0, value);
+	// 	// });
+
+	// 	// yield randomVectorRef.points([[0, 200], [oldEndX, oldEndY]], 3, easeInOutCubic);
+	// 	yield randomVectorRef.points([[0, 200], [100, 100]], 3, easeInOutCubic);
+	// }
+	data.logger.debug("bar");
+
 	yield* waitFor(2);
 }
 
-function* cleanup(randomVectorRefs, rectRef, codeRef, sunRef, normalRef, surfaceRef, gridRef) {
-	for (const randomVectorRef of randomVectorRefs().children()) {
+function* cleanup(data) {
+	for (const randomVectorRef of data.randomVectorRefs().children()) {
 		yield randomVectorRef.opacity(0, 0.6);
 		yield randomVectorRef.end(0, 0.6);
 	}
+
 	yield * all(
-		rectRef().position.y(-840, 0.6),
-		codeRef().position.y(-740, 0.6),
-		delay(0.1, sunRef().opacity(0, 0.6)),
-		delay(0.4, normalRef().end(0, 0.6)),
-		delay(0.7, surfaceRef().opacity(0, 0.6)),
-		delay(1.2, gridRef().opacity(0, 0.6))
+		data.rectRef().position.y(-840, 0.6),
+		data.codeRef().position.y(-740, 0.6),
+		delay(0.1, data.sunRef().opacity(0, 0.6)),
+		delay(0.4, data.normalRef().end(0, 0.6)),
+		delay(0.7, data.surfaceRef().opacity(0, 0.6)),
+		delay(1.2, data.gridRef().opacity(0, 0.6))
 	);
 }
