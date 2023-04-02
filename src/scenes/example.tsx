@@ -18,8 +18,25 @@ export default makeScene2D(function* (view) {
 
 	view.fill(GRAY);
 
-	const gridRef = createRef<Grid>();
-	view.add(<Grid ref={gridRef}
+	let data = setup(view);
+
+	data.codeRef = createRef<CodeBlock>();
+	yield view.add(<CodeBlock ref={data.codeRef}
+		language="tsx"
+		code={`ray.dir = plane.normal;`}
+		y={-740}
+	/>);
+
+	yield* run(data)
+
+	yield* cleanup(data.randomVectorRefs, data.rectRef, data.codeRef, data.sunRef, data.normalRef, data.surfaceRef, data.gridRef);
+});
+
+function setup(view) {
+	const data = {};
+
+	data.gridRef = createRef<Grid>();
+	view.add(<Grid ref={data.gridRef}
 		width={view.width}
 		height={view.height}
 		spacing={200}
@@ -27,23 +44,16 @@ export default makeScene2D(function* (view) {
 		lineWidth={4}
 		opacity={0}
 		lineDash={[15]}
-		// lineDashOffset={20}
-		// lineCap="round"
+	// lineDashOffset={20}
+	// lineCap="round"
 	/>);
 
-	// const randomVectorRefs = [];
-	const randomVectorRefs = createRef<Node>();
-	view.add(
-		<Node ref={randomVectorRefs} x={0} y={0}></Node>
-	)
-	createRandomVectorRefs(randomVectorRefs);
-	// logger.debug(`randomVectorRefs() is ${randomVectorRefs()}`);
-	// for (const x in randomVectorRefs().children()) {
-	// 	logger.debug(x);
-	// }
+	data.randomVectorRefs = createRef<Node>();
+	view.add(<Node ref={data.randomVectorRefs} />)
+	createRandomVectorRefs(data.randomVectorRefs);
 
-	const sunRayRef = createRef<Line>();
-	view.add(<Line ref={sunRayRef}
+	data.sunRayRef = createRef<Line>();
+	view.add(<Line ref={data.sunRayRef}
 		points={[new Vector2(540, -115), new Vector2(0, 200)]}
 		stroke={YELLOW}
 		lineWidth={10}
@@ -52,19 +62,19 @@ export default makeScene2D(function* (view) {
 		end={0}
 	/>);
 
-	const normalRef = createRef<Line>();
-	const surfaceRef = createRef<Line>();
-	const surfaceGroup = createRef<Node>();
+	data.normalRef = createRef<Line>();
+	data.surfaceRef = createRef<Line>();
+	data.surfaceGroup = createRef<Node>();
 	view.add(
-		<Node ref={surfaceGroup} y={200}>
-			<Line ref={normalRef}
+		<Node ref={data.surfaceGroup} y={200}>
+			<Line ref={data.normalRef}
 				points={[new Vector2(0, 0), new Vector2(0, -200)]}
 				stroke={RED}
 				lineWidth={10}
 				endArrow
 				end={0}
 			/>
-			<Line ref={surfaceRef}
+			<Line ref={data.surfaceRef}
 				points={[new Vector2(-400, 0), new Vector2(400, 0)]}
 				stroke={WHITE}
 				lineWidth={20}
@@ -74,79 +84,27 @@ export default makeScene2D(function* (view) {
 		</Node>
 	);
 
-	const sunRef = createRef<Node>();
+	data.sunRef = createRef<Node>();
 	view.add(
-		<Node ref={sunRef} x={600} y={-150} opacity={0}>
+		<Node ref={data.sunRef} x={600} y={-150} opacity={0}>
 			<Circle
 				fill={YELLOW}
 				size={100}
 			></Circle>
 		</Node>
 	)
-	addSunshineRefs(sunRef);
+	addSunshineRefs(data.sunRef);
 
-	const rectRef = createRef<Rect>();
-	view.add(<Rect ref={rectRef}
+	data.rectRef = createRef<Rect>();
+	view.add(<Rect ref={data.rectRef}
 		fill={GRAY}
 		width={view.width}
 		height={400}
 		y={-840}
 	/>);
 
-	const codeRef = createRef<CodeBlock>();
-	yield view.add(<CodeBlock ref={codeRef}
-		language="tsx"
-		code={`ray.dir = plane.normal;`}
-		y={-740}
-	/>);
-
-	yield* gridRef().opacity(1, 1.5);
-	yield* waitFor(0.6);
-	yield* surfaceRef().opacity(1, 1.5);
-	yield* waitFor(0.4);
-	yield* normalRef().end(1, 1.5);
-	yield* waitFor(0.6);
-	yield* surfaceGroup().rotation(30, 1.5).to(0, 1.5);
-	yield* waitFor(0.6);
-	yield* sunRef().opacity(1, 1.5);
-	yield* sunRayRef().opacity(1),
-	yield* waitFor(0.6);
-	yield* all(
-		sunRayRef().end(1, 1.5),
-		delay(0.9, normalRef().stroke(YELLOW, 1.5)),
-		delay(0.9, sunRayRef().start(1, 1.5)),
-		delay(2.0, sunRayRef().opacity(0, 0.6)),
-	);
-	yield* waitFor(0.6);
-	yield* all(
-		rectRef().position.y(-540, 2),
-		codeRef().position.y(-440, 2)
-	);
-	yield* waitFor(0.6);
-	yield* codeRef().edit(1.2)`ray.dir = plane.normal${insert(' + random()')};`;
-	yield* waitFor(0.6);
-	for (const randomVectorRef of randomVectorRefs().children()) {
-		yield randomVectorRef.end(1, 1.5);
-	}
-	yield* waitFor(2);
-	yield* codeRef().selection(lines(0, Infinity), 1);
-	yield* waitFor(0.6);
-	yield* codeRef().edit(1.2)`ray.dir = ${insert('normalize(')}plane.normal + random()${insert(')')};`;
-	yield* waitFor(0.6);
-	yield* codeRef().selection(lines(0, Infinity), 1);
-	yield* waitFor(0.6);
-	for (const randomVectorRef of randomVectorRefs().children()) {
-		yield randomVectorRef.end(0, 0.6);
-	}
-	yield* all(
-		rectRef().position.y(-840, 0.6),
-		codeRef().position.y(-740, 0.6),
-		delay(0.1, sunRef().opacity(0, 0.6)),
-		delay(0.4, normalRef().end(0, 0.6)),
-		delay(0.7, surfaceRef().opacity(0, 0.6)),
-		delay(1.2, gridRef().opacity(0, 0.6))
-	);
-});
+	return data;
+}
 
 function createRandomVectorRefs(randomVectorRefs) {
 	const randomVectorCount = 10;
@@ -168,6 +126,7 @@ function createRandomVectorRefs(randomVectorRefs) {
 			endArrow
 			end={0}
 			lineCap={'round'}
+			opacity={0}
 		/>);
 	}
 };
@@ -194,4 +153,58 @@ function addSunshineRefs(sunRef) {
 			lineCap={'round'}
 		/>);
 	}
+}
+
+function* run(data) {
+	yield* data.gridRef().opacity(1, 1.5);
+	yield* waitFor(0.6);
+	yield* data.surfaceRef().opacity(1, 1.5);
+	yield* waitFor(0.4);
+	yield* data.normalRef().end(1, 1.5);
+	yield* waitFor(0.6);
+	yield* data.surfaceGroup().rotation(30, 1.5).to(0, 1.5);
+	yield* waitFor(0.6);
+	yield* all(
+		data.sunRef().opacity(1, 1.5),
+		data.sunRayRef().opacity(1, 1.5)
+	);
+	yield* waitFor(0.6);
+	yield* all(
+		data.sunRayRef().end(1, 1.5),
+		delay(0.9, data.normalRef().stroke(YELLOW, 1.5)),
+		delay(0.9, data.sunRayRef().start(1, 1.5)),
+		delay(2.0, data.sunRayRef().opacity(0, 0.6)),
+	);
+	yield* waitFor(0.6);
+	yield* all(
+		data.rectRef().position.y(-540, 2),
+		data.codeRef().position.y(-440, 2)
+	);
+	yield* waitFor(1.5);
+	yield* data.codeRef().edit(1.2)`ray.dir = plane.normal${insert(' + random()')};`;
+	yield* waitFor(0.6);
+	for (const randomVectorRef of data.randomVectorRefs().children()) {
+		yield randomVectorRef.opacity(1, 1.5);
+		yield randomVectorRef.end(1, 1.5);
+	}
+	yield* waitFor(2);
+	yield* data.codeRef().edit(1.2)`ray.dir = ${insert('normalize(')}plane.normal + random()${insert(')')};`;
+	// yield* waitFor(0.6);
+	// yield* codeRef().selection(lines(0, Infinity), 1);
+	yield* waitFor(2);
+}
+
+function* cleanup(randomVectorRefs, rectRef, codeRef, sunRef, normalRef, surfaceRef, gridRef) {
+	for (const randomVectorRef of randomVectorRefs().children()) {
+		yield randomVectorRef.opacity(0, 0.6);
+		yield randomVectorRef.end(0, 0.6);
+	}
+	yield * all(
+		rectRef().position.y(-840, 0.6),
+		codeRef().position.y(-740, 0.6),
+		delay(0.1, sunRef().opacity(0, 0.6)),
+		delay(0.4, normalRef().end(0, 0.6)),
+		delay(0.7, surfaceRef().opacity(0, 0.6)),
+		delay(1.2, gridRef().opacity(0, 0.6))
+	);
 }
