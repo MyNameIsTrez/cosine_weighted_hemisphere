@@ -2,8 +2,9 @@ import { makeScene2D } from '@motion-canvas/2d/lib/scenes';
 import { Grid, Rect, Line, Node, Circle } from '@motion-canvas/2d/lib/components';
 import { createRef, useLogger } from '@motion-canvas/core/lib/utils';
 import { all, delay, waitFor } from '@motion-canvas/core/lib/flow';
-import { CodeBlock, insert } from '@motion-canvas/2d/lib/components/CodeBlock';
+import { CodeBlock, insert, word } from '@motion-canvas/2d/lib/components/CodeBlock';
 import { tween, map, easeInOutCubic } from '@motion-canvas/core/lib/tweening';
+import { Vector2 } from '@motion-canvas/core/lib/types';
 
 const GRAY = '#2a2a2a';
 const LIGHT_GRAY = '#444444';
@@ -43,8 +44,6 @@ function setup(view) {
 		lineWidth={4}
 		opacity={0}
 		lineDash={[15]}
-	// lineDashOffset={20}
-	// lineCap="round"
 	/>);
 
 	data.randomVectorRefs = createRef<Node>();
@@ -101,10 +100,6 @@ function setup(view) {
 		height={400}
 		y={-840}
 	/>);
-
-	// TODO: REMOVE
-	data.line = createRef<Line>();
-	view.add(<Line ref={data.line} lineWidth={3} stroke="#ECEFF4" points={[[0, 0], [100, 200]]} />)
 
 	return data;
 }
@@ -191,47 +186,27 @@ function* run(data) {
 		yield randomVectorRef.end(1, 1.5);
 	}
 	yield* waitFor(2);
+	yield data.codeRef().selection(word(0, 10, 23), 1);
+
+	yield* data.normalRef().opacity(0, 2);
+	for (const randomVectorRef of data.randomVectorRefs().children()) {
+		const oldEndX = randomVectorRef.points()[1][0];
+		const oldEndY = randomVectorRef.points()[1][1];
+
+		yield randomVectorRef.points([[0, 200], [oldEndX, oldEndY]], 2, easeInOutCubic);
+	}
+	yield* waitFor(3);
 	yield* data.codeRef().edit(1.2)`ray.dir = ${insert('normalize(')}plane.normal + random()${insert(')')};`;
-	// yield* waitFor(0.6);
-	// yield* codeRef().selection(lines(0, Infinity), 1);
 
-	// TODO: Lerp data.randomVectorRefs to be normalized
-	data.logger.debug("foo");
+	for (const randomVectorRef of data.randomVectorRefs().children()) {
+		const newEndX = randomVectorRef.points()[1][0] - randomVectorRef.points()[0][0];
+		const newEndY = randomVectorRef.points()[1][1] - randomVectorRef.points()[0][1];
 
-	// TODO: REMOVE
-	// yield* data.line().points([[500, 200], [-200, -500]], 5, easeInOutCubic)
+		const normalized = new Vector2(newEndX, newEndY).normalized.mul(200);
 
-	// data.logger.debug(`${data.randomVectorRefs().children()[0]}`);
-	yield* data.randomVectorRefs().children()[0].points([[0, 200], [100, 100]], 3);
-
-	// yield* data.randomVectorRefs().children()[0].points([[0, 200], [100, 100]], 3, easeInOutCubic);
-	// for (const randomVectorRef of data.randomVectorRefs().children()) {
-	// 	// yield randomVectorRef.points()[1].x += 10;
-	// 	// data.logger.debug(`${randomVectorRef.points()[1].x}`);
-
-	// 	// const oldStartX = randomVectorRef.points()[0].x;
-	// 	// const oldStartY = randomVectorRef.points()[0].y;
-	// 	const oldEndX = randomVectorRef.points()[1].x;
-	// 	const oldEndY = randomVectorRef.points()[1].y;
-
-	// 	// const oldStartX = 100;
-	// 	// const oldStartY = 100;
-	// 	// const oldEndX = 100;
-	// 	// const oldEndY = 100;
-
-	// 	// yield* tween(2, value => {
-	// 	// 	// randomVectorRef.points()[0].x = map(oldStartX, 0, value);
-	// 	// 	// randomVectorRef.points()[0].y = map(oldStartY, 0, value);
-	// 	// 	randomVectorRef.points()[1].x = map(oldEndX, 0, value);
-	// 	// 	randomVectorRef.points()[1].y = map(oldEndY, 0, value);
-	// 	// });
-
-	// 	// yield randomVectorRef.points([[0, 200], [oldEndX, oldEndY]], 3, easeInOutCubic);
-	// 	yield randomVectorRef.points([[0, 200], [100, 100]], 3, easeInOutCubic);
-	// }
-	data.logger.debug("bar");
-
-	yield* waitFor(2);
+		yield randomVectorRef.points([[0, 200], [normalized.x * 1, normalized.y * 1 + 200]], 2, easeInOutCubic);
+	}
+	yield* waitFor(5);
 }
 
 function* cleanup(data) {
@@ -245,7 +220,7 @@ function* cleanup(data) {
 		data.codeRef().position.y(-740, 0.6),
 		delay(0.1, data.sunRef().opacity(0, 0.6)),
 		delay(0.4, data.normalRef().end(0, 0.6)),
-		delay(0.7, data.surfaceRef().opacity(0, 0.6)),
-		delay(1.2, data.gridRef().opacity(0, 0.6))
+		delay(0.2, data.surfaceRef().opacity(0, 0.6)),
+		delay(0.5, data.gridRef().opacity(0, 0.6))
 	);
 }
