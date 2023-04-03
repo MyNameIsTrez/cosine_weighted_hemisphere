@@ -1,3 +1,6 @@
+# Run
+npm run serve
+
 # Render
 ffmpeg -framerate 60 -i output/project/%06d.png -crf 1 C:/Users/welfj/Desktop/output.webm
 

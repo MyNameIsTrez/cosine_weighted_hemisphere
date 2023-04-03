@@ -10,8 +10,13 @@ enum RandomVectorType {
 	randomVector,
 	randomUnitVector,
 }
-// This is configurable!
-const CHOSEN_UNIT_VECTOR_TYPE = RandomVectorType.randomVector;
+
+// CONFIGURABLE ////////////////////////////////////////////////////////////////
+
+const CHOSEN_UNIT_VECTOR_TYPE = RandomVectorType.randomUnitVector;
+
+const RANDOM_VECTOR_COUNT = 50;
+const RANDOM_VECTOR_OPACITY = 0.3;
 
 const GRAY = '#2a2a2a';
 const LIGHT_GRAY = '#444444';
@@ -20,6 +25,8 @@ const RED = '#f22a2a';
 const YELLOW = '#f2f22a';
 
 const CELL_SIZE = 200;
+
+////////////////////////////////////////////////////////////////////////////////
 
 export default makeScene2D(function* (view) {
 	view.fill(GRAY);
@@ -112,11 +119,10 @@ function setup(view, data) {
 
 function createRandomVectorRefs(data) {
 	const randomVectorRefs = data.randomVectorRefs;
-	const randomVectorCount = 50;
-	const randomVectorAngleIncrement = 2 * Math.PI / randomVectorCount;
+	const randomVectorAngleIncrement = 2 * Math.PI / RANDOM_VECTOR_COUNT;
 	let angle = 0;
 
-	for (let i = 0; i < randomVectorCount; i++) {
+	for (let i = 0; i < RANDOM_VECTOR_COUNT; i++) {
 		const randomVectorRef = createRef<Line>();
 
 		let x, y;
@@ -130,8 +136,9 @@ function createRandomVectorRefs(data) {
 		else if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomVector)
 		{
 			const radians = data.random.nextFloat() * 2 * Math.PI;
-			x = Math.cos(radians) * data.random.nextFloat();
-			y = Math.sin(radians) * data.random.nextFloat();
+			const r = Math.sqrt(data.random.nextFloat());
+			x = Math.cos(radians) * r;
+			y = Math.sin(radians) * r;
 		}
 
 		// x = Math.cos(angle);
@@ -243,7 +250,7 @@ function* run(data) {
 	yield* data.codeRef().edit(3)`ray.dir = plane.normal${insert(' + ' + randomVectorName + '()')};`;
 	yield* waitFor(0.6);
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
-		yield randomVectorRef.opacity(0.3, 1.5);
+		yield randomVectorRef.opacity(RANDOM_VECTOR_OPACITY, 1.5);
 		yield randomVectorRef.end(1, 1.5);
 	}
 	yield* waitFor(2);
