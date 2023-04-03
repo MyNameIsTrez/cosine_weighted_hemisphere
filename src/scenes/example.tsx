@@ -6,6 +6,13 @@ import { CodeBlock, insert, word } from '@motion-canvas/2d/lib/components/CodeBl
 import { easeInOutCubic } from '@motion-canvas/core/lib/tweening';
 import { Vector2 } from '@motion-canvas/core/lib/types';
 
+enum RandomVectorType {
+	randomVector,
+	randomUnitVector,
+}
+// This is configurable!
+const CHOSEN_UNIT_VECTOR_TYPE = RandomVectorType.randomVector;
+
 const GRAY = '#2a2a2a';
 const LIGHT_GRAY = '#444444';
 const WHITE = '#f2f2f2';
@@ -112,32 +119,35 @@ function createRandomVectorRefs(data) {
 	for (let i = 0; i < randomVectorCount; i++) {
 		const randomVectorRef = createRef<Line>();
 
-		angle += randomVectorAngleIncrement;
+		let x, y;
 
-		// const x = Math.cos(angle);
-		// const y = Math.sin(angle);
+		if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomUnitVector)
+		{
+			const radians = data.random.nextFloat() * 2 * Math.PI;
+			x = Math.cos(radians);
+			y = Math.sin(radians);
+		}
+		else if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomVector)
+		{
+			const radians = data.random.nextFloat() * 2 * Math.PI;
+			x = Math.cos(radians) * data.random.nextFloat();
+			y = Math.sin(radians) * data.random.nextFloat();
+		}
 
-		// randomUnitVector()
-		const radians = data.random.nextFloat() * 2 * Math.PI;
-		const x = Math.cos(radians);
-		const y = Math.sin(radians);
+		// x = Math.cos(angle);
+		// y = Math.sin(angle);
 
-		// const x = Math.cos(angle) * data.random.nextFloat();
-		// const y = Math.sin(angle) * data.random.nextFloat();
+		// x = Math.cos(angle) * data.random.nextFloat();
+		// y = Math.sin(angle) * data.random.nextFloat();
 
-		// const x = Math.cos(data.random.nextFloat() * 2 * Math.PI) * data.random.nextFloat();
-		// const y = Math.sin(data.random.nextFloat() * 2 * Math.PI) * data.random.nextFloat();
-
-		// randomVector()
-		// const radians = data.random.nextFloat() * 2 * Math.PI;
-		// const x = Math.cos(radians) * data.random.nextFloat();
-		// const y = Math.sin(radians) * data.random.nextFloat();
+		// x = Math.cos(data.random.nextFloat() * 2 * Math.PI) * data.random.nextFloat();
+		// y = Math.sin(data.random.nextFloat() * 2 * Math.PI) * data.random.nextFloat();
 
 		// TODO: DON'T PASS LOGGER
 		// const unitVector = randomUnitVector(data.random, data.logger);
 		// data.logger.debug(`${unitVector.x * unitVector.x + unitVector.y * unitVector.y}`);
-		// const x = unitVector.x;
-		// const y = unitVector.y;
+		// x = unitVector.x;
+		// y = unitVector.y;
 
 		randomVectorRefs().add(<Line ref={randomVectorRef}
 			points={[
@@ -152,6 +162,8 @@ function createRandomVectorRefs(data) {
 			lineCap={'round'}
 			opacity={0}
 		/>);
+
+		angle += randomVectorAngleIncrement;
 	}
 }
 
@@ -220,15 +232,27 @@ function* run(data) {
 		data.codeRef().position.y(-440, 2)
 	);
 	yield* waitFor(1);
-	yield* data.codeRef().edit(3)`ray.dir = plane.normal${insert(' + randomUnitVector()')};`;
+
+	let randomVectorName;
+	if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomUnitVector) {
+		randomVectorName = 'randomUnitVector';
+	} else if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomVector) {
+		randomVectorName = 'randomVector';
+	}
+
+	yield* data.codeRef().edit(3)`ray.dir = plane.normal${insert(' + ' + randomVectorName + '()')};`;
 	yield* waitFor(0.6);
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
 		yield randomVectorRef.opacity(0.3, 1.5);
 		yield randomVectorRef.end(1, 1.5);
 	}
 	yield* waitFor(2);
-	// yield data.codeRef().selection(word(0, 10, 29), 1);
-	yield data.codeRef().selection(word(0, 10, 33), 1);
+
+	if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomUnitVector) {
+		yield data.codeRef().selection(word(0, 10, 33), 1);
+	} else if (CHOSEN_UNIT_VECTOR_TYPE === RandomVectorType.randomVector) {
+		yield data.codeRef().selection(word(0, 10, 29), 1);
+	}
 
 	yield* data.normalRef().opacity(0, 2);
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
@@ -238,7 +262,7 @@ function* run(data) {
 		yield randomVectorRef.points([[0, CELL_SIZE], [oldEndX, oldEndY]], 2, easeInOutCubic);
 	}
 	yield* waitFor(3);
-	yield* data.codeRef().edit(3)`ray.dir = ${insert('normalize(')}plane.normal + randomUnitVector()${insert(')')};`;
+	yield* data.codeRef().edit(3)`ray.dir = ${insert('normalize(')}plane.normal + ${randomVectorName}()${insert(')')};`;
 
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
 		const newEndX = randomVectorRef.points()[1][0] - randomVectorRef.points()[0][0];
