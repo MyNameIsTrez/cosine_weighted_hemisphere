@@ -1,24 +1,27 @@
 import { makeScene2D } from '@motion-canvas/2d/lib/scenes';
 import { Grid, Rect, Line, Node, Circle } from '@motion-canvas/2d/lib/components';
-import { createRef, useLogger } from '@motion-canvas/core/lib/utils';
+import { createRef, useLogger, useRandom } from '@motion-canvas/core/lib/utils';
 import { all, delay, waitFor } from '@motion-canvas/core/lib/flow';
 import { CodeBlock, insert, word } from '@motion-canvas/2d/lib/components/CodeBlock';
-import { tween, map, easeInOutCubic } from '@motion-canvas/core/lib/tweening';
+import { easeInOutCubic } from '@motion-canvas/core/lib/tweening';
 import { Vector2 } from '@motion-canvas/core/lib/types';
 
 const GRAY = '#2a2a2a';
 const LIGHT_GRAY = '#444444';
-const WHITE = '#f2f2f2'
-const RED = '#f22a2a'
-const YELLOW = '#f2f22a'
+const WHITE = '#f2f2f2';
+const RED = '#f22a2a';
+const YELLOW = '#f2f22a';
+
+const CELL_SIZE = 200;
 
 export default makeScene2D(function* (view) {
-	const logger = useLogger();
-
 	view.fill(GRAY);
 
-	let data = setup(view);
-	data.logger = logger;
+	const data = {};
+	data.logger = useLogger();
+	data.random = useRandom();
+
+	setup(view, data);
 
 	data.codeRef = createRef<CodeBlock>();
 	yield view.add(<CodeBlock ref={data.codeRef}
@@ -32,14 +35,12 @@ export default makeScene2D(function* (view) {
 	yield* cleanup(data);
 });
 
-function setup(view) {
-	const data = {};
-
+function setup(view, data) {
 	data.gridRef = createRef<Grid>();
 	view.add(<Grid ref={data.gridRef}
 		width={view.width}
 		height={view.height}
-		spacing={200}
+		spacing={CELL_SIZE}
 		stroke={LIGHT_GRAY}
 		lineWidth={4}
 		opacity={0}
@@ -48,11 +49,11 @@ function setup(view) {
 
 	data.randomVectorRefs = createRef<Node>();
 	view.add(<Node ref={data.randomVectorRefs} />)
-	createRandomVectorRefs(data.randomVectorRefs);
+	createRandomVectorRefs(data);
 
 	data.sunRayRef = createRef<Line>();
 	view.add(<Line ref={data.sunRayRef}
-		points={[[540, -115], [0, 200]]}
+		points={[[540, -115], [0, CELL_SIZE]]}
 		stroke={YELLOW}
 		lineWidth={10}
 		lineCap={'round'}
@@ -64,9 +65,9 @@ function setup(view) {
 	data.surfaceRef = createRef<Line>();
 	data.surfaceGroup = createRef<Node>();
 	view.add(
-		<Node ref={data.surfaceGroup} y={200}>
+		<Node ref={data.surfaceGroup} y={CELL_SIZE}>
 			<Line ref={data.normalRef}
-				points={[[0, 0], [0, -200]]}
+				points={[[0, 0], [0, -CELL_SIZE]]}
 				stroke={RED}
 				lineWidth={10}
 				endArrow
@@ -100,12 +101,11 @@ function setup(view) {
 		height={400}
 		y={-840}
 	/>);
-
-	return data;
 }
 
-function createRandomVectorRefs(randomVectorRefs) {
-	const randomVectorCount = 10;
+function createRandomVectorRefs(data) {
+	const randomVectorRefs = data.randomVectorRefs;
+	const randomVectorCount = 50;
 	const randomVectorAngleIncrement = 2 * Math.PI / randomVectorCount;
 	let angle = 0;
 
@@ -114,20 +114,61 @@ function createRandomVectorRefs(randomVectorRefs) {
 
 		angle += randomVectorAngleIncrement;
 
+		// const x = Math.cos(angle);
+		// const y = Math.sin(angle);
+
+		// randomUnitVector()
+		const radians = data.random.nextFloat() * 2 * Math.PI;
+		const x = Math.cos(radians);
+		const y = Math.sin(radians);
+
+		// const x = Math.cos(angle) * data.random.nextFloat();
+		// const y = Math.sin(angle) * data.random.nextFloat();
+
+		// const x = Math.cos(data.random.nextFloat() * 2 * Math.PI) * data.random.nextFloat();
+		// const y = Math.sin(data.random.nextFloat() * 2 * Math.PI) * data.random.nextFloat();
+
+		// randomVector()
+		// const radians = data.random.nextFloat() * 2 * Math.PI;
+		// const x = Math.cos(radians) * data.random.nextFloat();
+		// const y = Math.sin(radians) * data.random.nextFloat();
+
+		// TODO: DON'T PASS LOGGER
+		// const unitVector = randomUnitVector(data.random, data.logger);
+		// data.logger.debug(`${unitVector.x * unitVector.x + unitVector.y * unitVector.y}`);
+		// const x = unitVector.x;
+		// const y = unitVector.y;
+
 		randomVectorRefs().add(<Line ref={randomVectorRef}
 			points={[
 				[0, 0],
-				[Math.cos(angle) * 200, Math.sin(angle) * -200]
+				[x * CELL_SIZE, y * -CELL_SIZE]
 			]}
 			stroke={YELLOW}
 			lineWidth={10}
 			endArrow
+			// arrowSize={8}
 			end={0}
 			lineCap={'round'}
 			opacity={0}
 		/>);
 	}
-};
+}
+
+// Source:
+// https://blog.demofox.org/2020/05/25/casual-shadertoy-path-tracing-1-basic-camera-diffuse-emissive/
+function randomUnitVector(random, logger)
+{
+    const z = random.nextFloat() * 2 - 1;
+    const a = random.nextFloat() * 2 * Math.PI;
+    const r = Math.sqrt(1 - z * z);
+    const x = r * Math.cos(a);
+	const y = r * Math.sin(a);
+	// TODO: Does this function even make sense if we're not returning the z variable?
+	// Not returning the z variable causes it to not be a unit vector anymore!
+	logger.debug(`${x * x + y * y + z * z}`);
+	return new Vector2(x, y);
+}
 
 function addSunshineRefs(sunRef) {
 	const sunshineCount = 10;
@@ -178,33 +219,34 @@ function* run(data) {
 		data.rectRef().position.y(-540, 2),
 		data.codeRef().position.y(-440, 2)
 	);
-	yield* waitFor(1.5);
-	yield* data.codeRef().edit(1.2)`ray.dir = plane.normal${insert(' + random()')};`;
+	yield* waitFor(1);
+	yield* data.codeRef().edit(3)`ray.dir = plane.normal${insert(' + randomUnitVector()')};`;
 	yield* waitFor(0.6);
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
-		yield randomVectorRef.opacity(1, 1.5);
+		yield randomVectorRef.opacity(0.3, 1.5);
 		yield randomVectorRef.end(1, 1.5);
 	}
 	yield* waitFor(2);
-	yield data.codeRef().selection(word(0, 10, 23), 1);
+	// yield data.codeRef().selection(word(0, 10, 29), 1);
+	yield data.codeRef().selection(word(0, 10, 33), 1);
 
 	yield* data.normalRef().opacity(0, 2);
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
 		const oldEndX = randomVectorRef.points()[1][0];
 		const oldEndY = randomVectorRef.points()[1][1];
 
-		yield randomVectorRef.points([[0, 200], [oldEndX, oldEndY]], 2, easeInOutCubic);
+		yield randomVectorRef.points([[0, CELL_SIZE], [oldEndX, oldEndY]], 2, easeInOutCubic);
 	}
 	yield* waitFor(3);
-	yield* data.codeRef().edit(1.2)`ray.dir = ${insert('normalize(')}plane.normal + random()${insert(')')};`;
+	yield* data.codeRef().edit(3)`ray.dir = ${insert('normalize(')}plane.normal + randomUnitVector()${insert(')')};`;
 
 	for (const randomVectorRef of data.randomVectorRefs().children()) {
 		const newEndX = randomVectorRef.points()[1][0] - randomVectorRef.points()[0][0];
 		const newEndY = randomVectorRef.points()[1][1] - randomVectorRef.points()[0][1];
 
-		const normalized = new Vector2(newEndX, newEndY).normalized.mul(200);
+		const normalized = new Vector2(newEndX, newEndY).normalized.mul(CELL_SIZE);
 
-		yield randomVectorRef.points([[0, 200], [normalized.x * 1, normalized.y * 1 + 200]], 2, easeInOutCubic);
+		yield randomVectorRef.points([[0, CELL_SIZE], [normalized.x * 1, normalized.y * 1 + CELL_SIZE]], 2, easeInOutCubic);
 	}
 	yield* waitFor(5);
 }
