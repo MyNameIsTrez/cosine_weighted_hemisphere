@@ -13,7 +13,7 @@ enum RandomVectorType {
 
 // CONFIGURABLE ////////////////////////////////////////////////////////////////
 
-const CHOSEN_UNIT_VECTOR_TYPE = RandomVectorType.randomUnitVector;
+const CHOSEN_UNIT_VECTOR_TYPE = RandomVectorType.randomVector;
 
 const RANDOM_VECTOR_COUNT = 50;
 const RANDOM_VECTOR_OPACITY = 0.3;
