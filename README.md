@@ -1,6 +1,6 @@
 # Cosine-weighted hemisphere visualization with Motion Canvas
 
-![Random vector GIF]("media/random_vector.gif")
+![Random vector GIF](media/random_vector.gif)
 
 These animations were created with [Motion Canvas](https://motioncanvas.io) to aid me in a [Mastodon discussion](https://mastodon.gamedev.place/@mynameistrez/110132648398286786).
 
@@ -18,6 +18,7 @@ These animations were created with [Motion Canvas](https://motioncanvas.io) to a
 ## Render
 
 First you have to generate the PNG frames:
+
 1. Go to http://localhost:9000/ in your browser
 2. Click the `Video Settings` button on the left
 3. Press the blue `RENDER` button
