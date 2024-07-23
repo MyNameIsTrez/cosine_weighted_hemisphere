@@ -6,9 +6,7 @@ These animations were created with [Motion Canvas](https://motioncanvas.io) to a
 
 ## The animation started as a sketch
 
-![Sketch](media/foo.png)
-
-<img src="media/foo.png" width=20% />
+<img src="media/sketch.png" width=20% />
 
 ## Running
 
