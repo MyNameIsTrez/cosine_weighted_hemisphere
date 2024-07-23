@@ -1,12 +1,14 @@
 # Cosine-weighted hemisphere visualization with Motion Canvas
 
-![foo]("media/random_unit_vector.gif")
+![Random vector GIF]("media/random_vector.gif")
 
 These animations were created with [Motion Canvas](https://motioncanvas.io) to aid me in a [Mastodon discussion](https://mastodon.gamedev.place/@mynameistrez/110132648398286786).
 
 ## The animation started as a sketch
 
-<img src="media/random_vector.gif" width=20% />
+![Sketch](media/foo.png)
+
+<img src="media/foo.png" width=20% />
 
 ## Running
 
@@ -30,12 +32,8 @@ First you have to generate the PNG frames:
 
 ### gif
 
-Create GIF directly from the output PNGs, which creates a huge GIF:
+`ffmpeg -framerate 60 -i output/project/%06d.png -vf "fps=50,scale=1920:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output/output.gif`
 
-`ffmpeg -f image2 -framerate 60 -i output/project/%06d.png output/output.gif`
-
-Create GIF from the WEBM, which creates a much smaller GIF.
 See [this post](https://superuser.com/a/556031/1287700) for an explanation of the command.
-Note that the FPS of 60 and scale of 1920 settings here cause it to take a really long time to render, so you probably want to lower them a little:
-
-`ffmpeg -i output/output.webm -vf "fps=60,scale=1920:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 output/output.gif`
+The reason `fps=50` is used for the output GIF here instead of `fps=60`, is because the maximum compatible value for that property is 50. Note that the input framerate is still 60 FPS.
+Note that the `scale=1920` setting here causes it to take a really long time to render, where the output makes it seem stuck printing `frame=0 fps=0.0` for a while, so you might want to lower that value to `960` or `480`.
